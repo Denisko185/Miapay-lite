@@ -1,0 +1,22 @@
+{
+  "name": "miapay-lite",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+
+  // Ports à rediriger vers ton navigateur
+  "forwardPorts": [8080, 5432],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-boot-dev-pack",
+        "ms-azuretools.vscode-docker",
+        "anthropic.claude-code",
+        "redhat.vscode-xml"
+      ]
+    }
+  },
+
+  // Optionnel : commande lancée une fois, à la création du conteneur
+  "postCreateCommand": "java -version && mvn -v"
+}
