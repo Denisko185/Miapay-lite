@@ -15,6 +15,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+  pgadmin:
+    image: dpage/pgadmin4:9
+    container_name: miapay-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   pgdata:
