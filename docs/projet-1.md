@@ -18,7 +18,7 @@ Maîtriser Spring Boot en profondeur avant de le distribuer. Un marchand génèr
 
 | Sujet | Décision |
 |---|---|
-| Java | 25 (LTS) |
+| Java | 21 (LTS) |
 | Spring Boot | Version stable la plus récente de la branche 4.x (jamais SNAPSHOT, milestone ou RC) |
 | Build | Maven, packaging jar |
 | springdoc | Série 3.x (compatible Spring Boot 4), dépendance `springdoc-openapi-starter-webmvc-ui` |
@@ -158,7 +158,7 @@ Client d'API généré depuis l'OpenAPI de Spring (`openapi-typescript`). Le fro
 
 ### M0 : Socle
 - [x] Dépôt GitHub, README, `.gitignore`, licence MIT
-- [x] Devcontainer (Codespaces, Java 25, Docker, extensions)
+- [x] Devcontainer (Codespaces, Java 21, Docker, extensions)
 - [x] Projet généré avec Spring Initializr (Maven, jar)
 - [x] `docker-compose.yml` avec PostgreSQL (version fixée, volume, healthcheck), identifiants dans `.env`
 - [x] `application.yml` (datasource, `ddl-auto: validate`, Actuator)
