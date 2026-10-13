@@ -64,7 +64,7 @@ Useful endpoints when the app runs: `/actuator/health`, `/swagger-ui.html` (in C
 - **Flyway owns the schema, Hibernate only validates it** (`ddl-auto: validate`). Every schema change is a new migration in `backend/src/main/resources/db/migration` (`V<n>__name.sql`, two underscores); entities must match the migrated schema or startup fails. `V1__init.sql` creates `users` (UUID PK, unique email, `role` constrained to `BUYER`/`MERCHANT`).
 - `spring.jpa.open-in-view: false`: lazy associations must be loaded inside the service transaction, not in controllers.
 - Actuator exposes only `health` and `info`. springdoc provides Swagger UI at `/swagger-ui.html`.
-- **Tests use Testcontainers, not `.env`.** `TestcontainersConfiguration` declares a `PostgreSQLContainer` with `@ServiceConnection`, which overrides the datasource properties; test classes opt in with `@Import(TestcontainersConfiguration.class)`. Note it uses `postgres:latest` while `docker-compose.yml` pins `postgres:17`, so tests may run on a newer Postgres than local dev.
+- **Tests use Testcontainers, not `.env`.** `TestcontainersConfiguration` declares a `PostgreSQLContainer` with `@ServiceConnection`, which overrides the datasource properties; test classes opt in with `@Import(TestcontainersConfiguration.class)`. Its image (`postgres:17`) must stay aligned with the one pinned in `docker-compose.yml`.
 - Postgres role vs database: with the defaults, the role is `admin` and the database is `miapay` (`psql -U admin -d miapay`).
 - Resetting local DB credentials requires recreating the volume: `docker compose down -v && docker compose up -d` (deletes local data).
 - Target package layout (feature-based): `auth`, `operator`, `qr`, `payment`, `common`.
@@ -97,8 +97,3 @@ Project 1, milestones (details in `docs/projet-1.md`):
 - [ ] M10 Deliverables (README, diagram, LinkedIn post)
 
 Current milestone: **M1**.
-
-## Known points to resolve
-
-- `TestcontainersConfiguration` uses `postgres:latest`; align it with the `postgres:17` pinned in `docker-compose.yml` so tests and local dev run on the same version.
-- Check that the Java version configured in `pom.xml` matches the runtime used in the devcontainer (see the commands section).
