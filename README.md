@@ -9,11 +9,17 @@ Spring Boot (Java 21) API backed by PostgreSQL. The schema is managed by Flyway;
 
 Maven does not need to be installed: the `./mvnw` wrapper is included.
 
+## Repository layout
+
+- `backend/`: the Spring Boot application, its `docker-compose.yml` and `.env`. All commands below are run from this folder.
+- `docs/`: project plans and technical documentation (in French).
+
 ## Running the project
 
 1. Create the `.env` file from the template (it is ignored by Git):
 
    ```bash
+   cd backend
    cp .env.example .env
    ```
 
@@ -24,6 +30,8 @@ Maven does not need to be installed: the `./mvnw` wrapper is included.
    | `POSTGRES_PASSWORD` | PostgreSQL password    | (required)  |
    | `POSTGRES_HOST`     | Database host          | `localhost` |
    | `POSTGRES_PORT`     | Database port          | `5432`      |
+   | `PGADMIN_EMAIL`     | pgAdmin login (Compose)    | (required)  |
+   | `PGADMIN_PASSWORD`  | pgAdmin password (Compose) | (required)  |
 
 2. Start PostgreSQL (Docker Compose reads `.env` automatically):
 
@@ -40,7 +48,7 @@ Maven does not need to be installed: the `./mvnw` wrapper is included.
 
    > Spring Boot does not read `.env` on its own. Without the export, the application receives the literal text `${POSTGRES_USER}` and the connection fails with an authentication error.
 
-On startup, Flyway applies the migrations in `src/main/resources/db/migration`.
+On startup, Flyway applies the migrations in `backend/src/main/resources/db/migration`.
 
 ## Checking that it works
 
@@ -64,7 +72,7 @@ docker compose exec postgres psql -U admin -d miapay -c '\d users'
 
 Integration tests start their own PostgreSQL through Testcontainers, so they depend neither on `.env` nor on the Compose container, but Docker must be running.
 
-To run the application against a throwaway Testcontainers database, launch `TestMiapayliteApplication` (in `src/test/java`) from your IDE.
+To run the application against a throwaway Testcontainers database, launch `TestMiapayliteApplication` (in `backend/src/test/java`) from your IDE.
 
 ## Resetting the local database
 

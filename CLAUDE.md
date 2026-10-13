@@ -42,9 +42,10 @@ Domain rules that shape the code:
 
 ## Commands
 
-Maven wrapper only (`./mvnw`); Java 21, Spring Boot 4.1.x.
+Maven wrapper only (`./mvnw`); Java 21, Spring Boot 4.1.x. The Spring Boot app, `docker-compose.yml` and `.env` live in `backend/` (a `frontend/` folder will be added later); run every command below from `backend/`.
 
 ```bash
+cd backend
 docker compose up -d                  # local PostgreSQL 17 (reads .env automatically)
 set -a; source .env; set +a           # REQUIRED before running the app, see below
 ./mvnw spring-boot:run                # run the app against the Compose database
@@ -53,14 +54,14 @@ set -a; source .env; set +a           # REQUIRED before running the app, see bel
 ./mvnw verify                         # full build including integration tests
 ```
 
-`TestMiapayliteApplication` (in `src/test`) starts the app against a throwaway Testcontainers database. There are no lint/format plugins configured.
+`TestMiapayliteApplication` (in `backend/src/test`) starts the app against a throwaway Testcontainers database. There are no lint/format plugins configured.
 
 Useful endpoints when the app runs: `/actuator/health`, `/swagger-ui.html` (in Codespaces, open the forwarded port 8080 from the **Ports** tab).
 
 ## Architecture notes
 
-- **Config via environment variables.** `application.yaml` reads `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (required) and `POSTGRES_HOST` / `POSTGRES_PORT` (default `localhost` / `5432`). Spring Boot does **not** read `.env`; if the variables are not exported, the literal text `${POSTGRES_USER}` is used and the failure shows up as a Postgres authentication error, not a placeholder error. `.env` is git-ignored; `.env.example` is the template.
-- **Flyway owns the schema, Hibernate only validates it** (`ddl-auto: validate`). Every schema change is a new migration in `src/main/resources/db/migration` (`V<n>__name.sql`, two underscores); entities must match the migrated schema or startup fails. `V1__init.sql` creates `users` (UUID PK, unique email, `role` constrained to `BUYER`/`MERCHANT`).
+- **Config via environment variables.** `application.yaml` reads `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (required) and `POSTGRES_HOST` / `POSTGRES_PORT` (default `localhost` / `5432`). Spring Boot does **not** read `.env`; if the variables are not exported, the literal text `${POSTGRES_USER}` is used and the failure shows up as a Postgres authentication error, not a placeholder error. `backend/.env` is git-ignored; `backend/.env.example` is the template. The Compose project name is pinned (`name: miapay-lite`) so the `pgdata` volume keeps the same name wherever the file lives.
+- **Flyway owns the schema, Hibernate only validates it** (`ddl-auto: validate`). Every schema change is a new migration in `backend/src/main/resources/db/migration` (`V<n>__name.sql`, two underscores); entities must match the migrated schema or startup fails. `V1__init.sql` creates `users` (UUID PK, unique email, `role` constrained to `BUYER`/`MERCHANT`).
 - `spring.jpa.open-in-view: false`: lazy associations must be loaded inside the service transaction, not in controllers.
 - Actuator exposes only `health` and `info`. springdoc provides Swagger UI at `/swagger-ui.html`.
 - **Tests use Testcontainers, not `.env`.** `TestcontainersConfiguration` declares a `PostgreSQLContainer` with `@ServiceConnection`, which overrides the datasource properties; test classes opt in with `@Import(TestcontainersConfiguration.class)`. Note it uses `postgres:latest` while `docker-compose.yml` pins `postgres:17`, so tests may run on a newer Postgres than local dev.
