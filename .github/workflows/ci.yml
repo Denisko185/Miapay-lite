@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel outdated runs of the same branch/PR, but never a run on main
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # backend/pom.xml is the single source of truth for the Java version.
+      - name: Read Java version from pom.xml
+        id: java
+        run: |
+          version=$(grep -oP '(?<=<java.version>)[^<]+' pom.xml)
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ steps.java.outputs.version }}
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      # Docker is preinstalled on ubuntu-latest, so Testcontainers works as-is.
+      - name: Build and run all tests
+        run: ./mvnw -B -ntp verify
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: backend/target/surefire-reports/
+          if-no-files-found: ignore
