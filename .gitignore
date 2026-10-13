@@ -29,5 +29,8 @@ replay_pid*
 # Maven build output
 target/
 
-#vscode cuustom config
+# VS Code custom config
 .vscode/
+
+# Claude Code local settings
+.claude/settings.local.json
