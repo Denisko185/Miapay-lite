@@ -32,6 +32,7 @@ Maven does not need to be installed: the `./mvnw` wrapper is included.
    | `POSTGRES_PORT`     | Database port          | `5432`      |
    | `PGADMIN_EMAIL`     | pgAdmin login (Compose)    | (required)  |
    | `PGADMIN_PASSWORD`  | pgAdmin password (Compose) | (required)  |
+   | `JWT_SECRET`        | HS256 key signing the JWTs (at least 32 bytes, e.g. `openssl rand -base64 48`) | (required) |
 
 2. Start PostgreSQL (Docker Compose reads `.env` automatically):
 
