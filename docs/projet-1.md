@@ -28,6 +28,9 @@ Maîtriser Spring Boot en profondeur avant de le distribuer. Un marchand génèr
 | Opérateur | Module interne appelé **uniquement via une interface** (`OperatorPort`), pour pouvoir l'extraire au projet 3 |
 | Environnement | GitHub Codespaces (VS Code), Docker Compose pour PostgreSQL |
 | Tests | JUnit 5, Mockito, AssertJ, Testcontainers (PostgreSQL réel) |
+| Authentification | JWT signé en **HS256** avec un secret partagé (`JWT_SECRET`, 32 octets minimum), via `oauth2-resource-server` de Spring Security. Remplacé par Keycloak au projet 5 |
+| Mots de passe | **BCrypt** via `DelegatingPasswordEncoder` (hash préfixé `{bcrypt}`, 72 caractères maximum) |
+| Erreurs d'API | Corps `ProblemDetail` (RFC 9457) : 400 pour la validation, 409 pour un conflit métier |
 
 ---
 
@@ -43,11 +46,13 @@ Tous les montants sont des entiers en FCFA (`BIGINT`), jamais des flottants. Hor
 - `created_at`
 
 ### `operator_accounts`
-- `id`, `user_id`
-- `balance` BIGINT
+- `id` UUID, `user_id` UUID (unique, clé étrangère vers `users`)
+- `balance` BIGINT, avec `CHECK (balance >= 0)` : dernier filet contre un solde négatif
 - `version` (verrou optimiste)
 
-Créé automatiquement à l'inscription : solde de départ pour l'acheteur (par exemple 100 000 FCFA), 0 pour le marchand.
+Créé automatiquement à l'inscription, dans la même transaction que l'utilisateur : solde de départ de 100 000 FCFA pour l'acheteur, 0 pour le marchand (valeur portée par l'enum `Role`).
+
+Côté code, `OperatorAccount` ne référence que l'identifiant `userId` (pas l'objet `User`), pour que le module `operator` ne dépende pas du module `auth`.
 
 ### `account_movements`
 Grand livre : chaque mouvement d'argent est tracé.
@@ -168,12 +173,12 @@ Client d'API généré depuis l'OpenAPI de Spring (`openapi-typescript`). Le fro
 - **Critère :** `/actuator/health` est `UP`, Swagger UI s'affiche, `./mvnw verify` passe.
 
 ### M1 : Authentification
-- [ ] Migration pour les comptes opérateur
-- [ ] Inscription (email unique, mot de passe haché, rôle)
+- [x] Migration pour les comptes opérateur (`V2__operator_accounts.sql`)
+- [x] Inscription (email unique, mot de passe haché, rôle)
 - [ ] Connexion et émission de JWT
 - [ ] Spring Security (resource server, règles par rôle)
-- [ ] Création automatique du compte opérateur à l'inscription
-- [ ] Tests d'intégration de l'auth
+- [x] Création automatique du compte opérateur à l'inscription
+- [ ] Tests d'intégration de l'auth (le service d'inscription est testé, y compris la course sur l'email ; restent les tests HTTP)
 
 ### M2 : Module opérateur
 - [ ] Interface `OperatorPort` et implémentation interne
@@ -237,6 +242,6 @@ Client d'API généré depuis l'OpenAPI de Spring (`openapi-typescript`). Le fro
 ## 10. Sujets à approfondir au fil du projet
 
 - Choix final verrou optimiste vs pessimiste (ADR)
-- Stratégie de hachage de l'OTP et du mot de passe
-- Format exact des erreurs d'API (codes HTTP, corps d'erreur)
+- Stratégie de hachage de l'OTP (le mot de passe est tranché : BCrypt)
+- Format des erreurs d'API : `ProblemDetail` retenu pour la validation (400) et l'email déjà utilisé (409) ; à compléter pour les autres cas (401, 403, 404, paiements)
 - Stratégie de tests : proportion unitaires / intégration
