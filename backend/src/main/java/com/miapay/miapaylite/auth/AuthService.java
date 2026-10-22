@@ -15,11 +15,16 @@ public class AuthService {
 	private final UserRepository users;
 	private final OperatorAccountService operatorAccounts;
 	private final PasswordEncoder passwordEncoder;
+	private final JwtService jwtService;
+	private final String fakeHashedPwd;
 
-	public AuthService(UserRepository users, OperatorAccountService operatorAccounts, PasswordEncoder passwordEncoder) {
+	public AuthService(UserRepository users, OperatorAccountService operatorAccounts, PasswordEncoder passwordEncoder,
+			JwtService jwtService) {
 		this.users = users;
 		this.operatorAccounts = operatorAccounts;
 		this.passwordEncoder = passwordEncoder;
+		this.jwtService = jwtService;
+		this.fakeHashedPwd = passwordEncoder.encode("fake@password");
 	}
 
 	@Transactional
@@ -47,6 +52,18 @@ public class AuthService {
 		operatorAccounts.openAccount(user.getId(), user.getRole().getInitialBalance());
 
 		return new RegisterResponse(user.getId(), user.getEmail(), user.getRole());
+	}
+
+	public LoginResponse login(LoginRequest request) {
+		String email = normalizeEmail(request.email());
+
+		User user = users.findByEmail(email).orElse(null);
+		String hashedPwd = (user != null) ? user.getPasswordHash() : fakeHashedPwd;
+		boolean isMatch = passwordEncoder.matches(request.password(), hashedPwd);
+		if (user == null || !isMatch) {
+			throw new InvalidCredentialsException();
+		}
+		return new LoginResponse(jwtService.generateToken(user), "Bearer", jwtService.expiresInSeconds());
 	}
 
 	private String normalizeEmail(String email) {

@@ -2,6 +2,7 @@ package com.miapay.miapaylite.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 
 import com.miapay.miapaylite.TestcontainersConfiguration;
 import com.miapay.miapaylite.operator.OperatorAccount;
@@ -34,6 +36,11 @@ class AuthServiceTest {
 
 	@Autowired
 	private OperatorAccountRepository accounts;
+
+	@Autowired
+	private JwtDecoder jwtDecoder;
+
+	private static final String PASSWORD = "password123";
 
 	@Test
 	void buyerStartsWithFundedOperatorAccount() {
@@ -67,6 +74,56 @@ class AuthServiceTest {
 
 		assertThatThrownBy(() -> authService.register(request("BOB-" + unique + "@Example.com", Role.MERCHANT)))
 				.isInstanceOf(EmailAlreadyUsedException.class);
+	}
+
+	@Test
+	void loginWithCorrectCredentialsReturnsAValidToken() {
+		String email = uniqueEmail();
+		RegisterResponse registered = authService.register(request(email, Role.BUYER));
+
+		LoginResponse response = authService.login(new LoginRequest(email, PASSWORD));
+
+		assertThat(response.tokenType()).isEqualTo("Bearer");
+		assertThat(response.expiresIn()).isPositive();
+		assertThat(jwtDecoder.decode(response.accessToken()).getSubject()).isEqualTo(registered.id().toString());
+	}
+
+	// The most important login test: the happy path alone would also pass with a broken password check.
+	@Test
+	void loginWithWrongPasswordIsRefused() {
+		String email = uniqueEmail();
+		authService.register(request(email, Role.BUYER));
+
+		assertThatThrownBy(() -> authService.login(new LoginRequest(email, "not-the-password")))
+				.isInstanceOf(InvalidCredentialsException.class);
+	}
+
+	@Test
+	void loginWithUnknownEmailIsRefused() {
+		assertThatThrownBy(() -> authService.login(new LoginRequest(uniqueEmail(), PASSWORD)))
+				.isInstanceOf(InvalidCredentialsException.class);
+	}
+
+	@Test
+	void unknownEmailAndWrongPasswordGiveTheSameError() {
+		String email = uniqueEmail();
+		authService.register(request(email, Role.BUYER));
+
+		Throwable wrongPassword = catchThrowable(() -> authService.login(new LoginRequest(email, "not-the-password")));
+		Throwable unknownEmail = catchThrowable(() -> authService.login(new LoginRequest(uniqueEmail(), PASSWORD)));
+
+		assertThat(wrongPassword).isInstanceOf(InvalidCredentialsException.class);
+		assertThat(unknownEmail).isInstanceOf(wrongPassword.getClass()).hasMessage(wrongPassword.getMessage());
+	}
+
+	@Test
+	void loginNormalizesTheEmail() {
+		String unique = UUID.randomUUID().toString();
+		authService.register(request("carol-" + unique + "@example.com", Role.BUYER));
+
+		LoginResponse response = authService.login(new LoginRequest("  CAROL-" + unique + "@Example.COM ", PASSWORD));
+
+		assertThat(response.accessToken()).isNotBlank();
 	}
 
 	// Proves that the UNIQUE constraint, not the existsByEmail pre-check, is what protects us:
@@ -123,7 +180,7 @@ class AuthServiceTest {
 	}
 
 	private static RegisterRequest request(String email, Role role) {
-		return new RegisterRequest(email, "password123", role);
+		return new RegisterRequest(email, PASSWORD, role);
 	}
 
 	private static String uniqueEmail() {

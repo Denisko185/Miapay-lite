@@ -175,7 +175,7 @@ Client d'API généré depuis l'OpenAPI de Spring (`openapi-typescript`). Le fro
 ### M1 : Authentification
 - [x] Migration pour les comptes opérateur (`V2__operator_accounts.sql`)
 - [x] Inscription (email unique, mot de passe haché, rôle)
-- [ ] Connexion et émission de JWT
+- [x] Connexion et émission de JWT (`POST /auth/login`, même réponse 401 et même durée pour email inconnu et mauvais mot de passe)
 - [ ] Spring Security (resource server, règles par rôle)
 - [x] Création automatique du compte opérateur à l'inscription
 - [ ] Tests d'intégration de l'auth (le service d'inscription est testé, y compris la course sur l'email ; restent les tests HTTP)
