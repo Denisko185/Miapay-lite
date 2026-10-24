@@ -90,6 +90,21 @@ class SecurityConfigTest {
 		mockMvc.perform(get("/v3/api-docs")).andExpect(status().isOk());
 	}
 
+	// Without this scheme, Swagger UI shows no "Authorize" button and cannot call protected routes.
+	@Test
+	void apiDocsDeclareTheBearerScheme() throws Exception {
+		mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type").value("http"))
+				.andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"));
+	}
+
+	// A relative server URL makes Swagger UI call the origin it was loaded from (works behind a proxy).
+	@Test
+	void apiDocsUseARelativeServerUrl() throws Exception {
+		mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(jsonPath("$.servers[0].url").value("/"));
+	}
+
 	// "/anything" has no controller: 401 proves security answers before routing.
 	@Test
 	void otherRoutesRequireAuthentication() throws Exception {

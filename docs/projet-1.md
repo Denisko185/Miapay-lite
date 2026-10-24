@@ -157,6 +157,8 @@ PWA React + TypeScript de 4 écrans, composants standards, aucun design sur mesu
 
 Client d'API généré depuis l'OpenAPI de Spring (`openapi-typescript`). Le front est fait en dernier : tout le backend se teste d'abord via Swagger UI.
 
+**Règle pour le front :** ne pas joindre l'en-tête `Authorization` aux appels `/auth/**`. Ces routes sont publiques, mais un jeton **invalide ou expiré** y provoque quand même un 401, car le filtre Bearer valide le jeton avant les règles d'autorisation. Il faut aussi supprimer un jeton expiré de son stockage. Dans Swagger UI, l'exigence de sécurité est globale : après expiration du jeton, cliquer sur *Authorize → Logout* avant d'appeler `register` ou `login`.
+
 ---
 
 ## 8. Backlog par jalons
