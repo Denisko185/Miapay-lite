@@ -28,7 +28,7 @@ Maîtriser Spring Boot en profondeur avant de le distribuer. Un marchand génèr
 | Opérateur | Module interne appelé **uniquement via une interface** (`OperatorPort`), pour pouvoir l'extraire au projet 3 |
 | Environnement | GitHub Codespaces (VS Code), Docker Compose pour PostgreSQL |
 | Tests | JUnit 5, Mockito, AssertJ, Testcontainers (PostgreSQL réel) |
-| Authentification | JWT signé en **HS256** avec un secret partagé (`JWT_SECRET`, 32 octets minimum), via `oauth2-resource-server` de Spring Security. Remplacé par Keycloak au projet 5 |
+| Authentification | JWT signé en **HS256** avec un secret partagé (`JWT_SECRET`, 32 octets minimum), via `oauth2-resource-server` de Spring Security. Remplacé par Keycloak au projet 5 (voir `docs/adr/0001-auth-jwt-hs256-bcrypt.md`) |
 | Mots de passe | **BCrypt** via `DelegatingPasswordEncoder` (hash préfixé `{bcrypt}`, 72 caractères maximum) |
 | Erreurs d'API | Corps `ProblemDetail` (RFC 9457) : 400 pour la validation, 409 pour un conflit métier |
 
