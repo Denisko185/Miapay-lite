@@ -21,4 +21,11 @@ public class OperatorAccountService {
 		return accounts.save(new OperatorAccount(userId, initialBalance));
 	}
 
+	// Every user gets an account at registration, so a missing one is an internal inconsistency, not a 404.
+	public long balanceOf(UUID userId) {
+		return accounts.findByUserId(userId)
+				.orElseThrow(() -> new IllegalStateException("No operator account for user " + userId))
+				.getBalance();
+	}
+
 }
