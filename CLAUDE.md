@@ -85,7 +85,7 @@ Useful endpoints when the app runs: `/actuator/health`, `/swagger-ui.html` (in C
 Project 1, milestones (details in `docs/projet-1.md`):
 
 - [x] M0 Foundation: repo, devcontainer, Initializr, Compose + PostgreSQL, Flyway V1, Actuator, springdoc, Testcontainers
-- [ ] M1 Authentication (JWT, Spring Security, operator account created at registration). Done: V2 migration, entities, registration, login + JWT (HS256), security filter chain, `/me`, HTTP integration tests, ADR 0001. Remaining: manual end-to-end check, PR
+- [x] M1 Authentication (JWT HS256, Spring Security, operator account created at registration, `/me`, ADR 0001)
 - [ ] M2 Operator module (`OperatorPort`, accounts, OTP, inbox)
 - [ ] M3 QR codes
 - [ ] M4 Payment flow and state machine
@@ -96,4 +96,4 @@ Project 1, milestones (details in `docs/projet-1.md`):
 - [ ] M9 Front (4 React screens)
 - [ ] M10 Deliverables (README, diagram, LinkedIn post)
 
-Current milestone: **M1**.
+Current milestone: **M2**.
