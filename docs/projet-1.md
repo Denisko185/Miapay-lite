@@ -28,6 +28,9 @@ Maîtriser Spring Boot en profondeur avant de le distribuer. Un marchand génèr
 | Opérateur | Module interne appelé **uniquement via une interface** (`OperatorPort`), pour pouvoir l'extraire au projet 3 |
 | Environnement | GitHub Codespaces (VS Code), Docker Compose pour PostgreSQL |
 | Tests | JUnit 5, Mockito, AssertJ, Testcontainers (PostgreSQL réel) |
+| Authentification | JWT signé en **HS256** avec un secret partagé (`JWT_SECRET`, 32 octets minimum), via `oauth2-resource-server` de Spring Security. Remplacé par Keycloak au projet 5 (voir `docs/adr/0001-auth-jwt-hs256-bcrypt.md`) |
+| Mots de passe | **BCrypt** via `DelegatingPasswordEncoder` (hash préfixé `{bcrypt}`, 72 caractères maximum) |
+| Erreurs d'API | Corps `ProblemDetail` (RFC 9457) : 400 pour la validation, 409 pour un conflit métier |
 
 ---
 
@@ -43,11 +46,13 @@ Tous les montants sont des entiers en FCFA (`BIGINT`), jamais des flottants. Hor
 - `created_at`
 
 ### `operator_accounts`
-- `id`, `user_id`
-- `balance` BIGINT
+- `id` UUID, `user_id` UUID (unique, clé étrangère vers `users`)
+- `balance` BIGINT, avec `CHECK (balance >= 0)` : dernier filet contre un solde négatif
 - `version` (verrou optimiste)
 
-Créé automatiquement à l'inscription : solde de départ pour l'acheteur (par exemple 100 000 FCFA), 0 pour le marchand.
+Créé automatiquement à l'inscription, dans la même transaction que l'utilisateur : solde de départ de 100 000 FCFA pour l'acheteur, 0 pour le marchand (valeur portée par l'enum `Role`).
+
+Côté code, `OperatorAccount` ne référence que l'identifiant `userId` (pas l'objet `User`), pour que le module `operator` ne dépende pas du module `auth`.
 
 ### `account_movements`
 Grand livre : chaque mouvement d'argent est tracé.
@@ -152,6 +157,8 @@ PWA React + TypeScript de 4 écrans, composants standards, aucun design sur mesu
 
 Client d'API généré depuis l'OpenAPI de Spring (`openapi-typescript`). Le front est fait en dernier : tout le backend se teste d'abord via Swagger UI.
 
+**Règle pour le front :** ne pas joindre l'en-tête `Authorization` aux appels `/auth/**`. Ces routes sont publiques, mais un jeton **invalide ou expiré** y provoque quand même un 401, car le filtre Bearer valide le jeton avant les règles d'autorisation. Il faut aussi supprimer un jeton expiré de son stockage. Dans Swagger UI, l'exigence de sécurité est globale : après expiration du jeton, cliquer sur *Authorize → Logout* avant d'appeler `register` ou `login`.
+
 ---
 
 ## 8. Backlog par jalons
@@ -168,12 +175,13 @@ Client d'API généré depuis l'OpenAPI de Spring (`openapi-typescript`). Le fro
 - **Critère :** `/actuator/health` est `UP`, Swagger UI s'affiche, `./mvnw verify` passe.
 
 ### M1 : Authentification
-- [ ] Migration pour les comptes opérateur
-- [ ] Inscription (email unique, mot de passe haché, rôle)
-- [ ] Connexion et émission de JWT
-- [ ] Spring Security (resource server, règles par rôle)
-- [ ] Création automatique du compte opérateur à l'inscription
-- [ ] Tests d'intégration de l'auth
+- [x] Migration pour les comptes opérateur (`V2__operator_accounts.sql`)
+- [x] Inscription (email unique, mot de passe haché, rôle)
+- [x] Connexion et émission de JWT (`POST /auth/login`, même réponse 401 et même durée pour email inconnu et mauvais mot de passe)
+- [x] Spring Security (resource server, sans session, CSRF désactivé, routes publiques `/auth/**`, `/actuator/health|info`, Swagger ; le claim `role` devient `ROLE_*`). Les règles par rôle (`hasRole`) s'ajouteront avec les endpoints `/qr` et `/payments`
+- [x] Création automatique du compte opérateur à l'inscription
+- [x] `GET /me` : profil et solde, l'identité vient uniquement du jeton (jamais d'un paramètre de requête)
+- [x] Tests d'intégration de l'auth (service d'inscription et course sur l'email, sécurité des routes, `/me`, parcours inscription → connexion → `/me`, erreurs 400 et 409 de l'inscription)
 
 ### M2 : Module opérateur
 - [ ] Interface `OperatorPort` et implémentation interne
@@ -237,6 +245,6 @@ Client d'API généré depuis l'OpenAPI de Spring (`openapi-typescript`). Le fro
 ## 10. Sujets à approfondir au fil du projet
 
 - Choix final verrou optimiste vs pessimiste (ADR)
-- Stratégie de hachage de l'OTP et du mot de passe
-- Format exact des erreurs d'API (codes HTTP, corps d'erreur)
+- Stratégie de hachage de l'OTP (le mot de passe est tranché : BCrypt)
+- Format des erreurs d'API : `ProblemDetail` retenu pour la validation (400) et l'email déjà utilisé (409) ; à compléter pour les autres cas (401, 403, 404, paiements)
 - Stratégie de tests : proportion unitaires / intégration

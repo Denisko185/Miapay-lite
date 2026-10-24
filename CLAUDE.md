@@ -60,7 +60,7 @@ Useful endpoints when the app runs: `/actuator/health`, `/swagger-ui.html` (in C
 
 ## Architecture notes
 
-- **Config via environment variables.** `application.yaml` reads `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (required) and `POSTGRES_HOST` / `POSTGRES_PORT` (default `localhost` / `5432`). Spring Boot does **not** read `.env`; if the variables are not exported, the literal text `${POSTGRES_USER}` is used and the failure shows up as a Postgres authentication error, not a placeholder error. `backend/.env` is git-ignored; `backend/.env.example` is the template. The Compose project name is pinned (`name: miapay-lite`) so the `pgdata` volume keeps the same name wherever the file lives.
+- **Config via environment variables.** `application.yaml` reads `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `JWT_SECRET` (all required) and `POSTGRES_HOST` / `POSTGRES_PORT` (default `localhost` / `5432`). Spring Boot does **not** read `.env`; if the variables are not exported, the literal text `${POSTGRES_USER}` is used and the failure shows up as a Postgres authentication error, not a placeholder error. `backend/.env` is git-ignored; `backend/.env.example` is the template. The Compose project name is pinned (`name: miapay-lite`) so the `pgdata` volume keeps the same name wherever the file lives.
 - **Flyway owns the schema, Hibernate only validates it** (`ddl-auto: validate`). Every schema change is a new migration in `backend/src/main/resources/db/migration` (`V<n>__name.sql`, two underscores); entities must match the migrated schema or startup fails. `V1__init.sql` creates `users` (UUID PK, unique email, `role` constrained to `BUYER`/`MERCHANT`).
 - `spring.jpa.open-in-view: false`: lazy associations must be loaded inside the service transaction, not in controllers.
 - Actuator exposes only `health` and `info`. springdoc provides Swagger UI at `/swagger-ui.html`.
@@ -85,7 +85,7 @@ Useful endpoints when the app runs: `/actuator/health`, `/swagger-ui.html` (in C
 Project 1, milestones (details in `docs/projet-1.md`):
 
 - [x] M0 Foundation: repo, devcontainer, Initializr, Compose + PostgreSQL, Flyway V1, Actuator, springdoc, Testcontainers
-- [ ] M1 Authentication (JWT, Spring Security, operator account created at registration)
+- [x] M1 Authentication (JWT HS256, Spring Security, operator account created at registration, `/me`, ADR 0001)
 - [ ] M2 Operator module (`OperatorPort`, accounts, OTP, inbox)
 - [ ] M3 QR codes
 - [ ] M4 Payment flow and state machine
@@ -96,4 +96,4 @@ Project 1, milestones (details in `docs/projet-1.md`):
 - [ ] M9 Front (4 React screens)
 - [ ] M10 Deliverables (README, diagram, LinkedIn post)
 
-Current milestone: **M1**.
+Current milestone: **M2**.
