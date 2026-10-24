@@ -179,7 +179,7 @@ Client d'API généré depuis l'OpenAPI de Spring (`openapi-typescript`). Le fro
 - [x] Spring Security (resource server, sans session, CSRF désactivé, routes publiques `/auth/**`, `/actuator/health|info`, Swagger ; le claim `role` devient `ROLE_*`). Les règles par rôle (`hasRole`) s'ajouteront avec les endpoints `/qr` et `/payments`
 - [x] Création automatique du compte opérateur à l'inscription
 - [x] `GET /me` : profil et solde, l'identité vient uniquement du jeton (jamais d'un paramètre de requête)
-- [ ] Tests d'intégration de l'auth (le service d'inscription est testé, y compris la course sur l'email ; restent les tests HTTP)
+- [x] Tests d'intégration de l'auth (service d'inscription et course sur l'email, sécurité des routes, `/me`, parcours inscription → connexion → `/me`, erreurs 400 et 409 de l'inscription)
 
 ### M2 : Module opérateur
 - [ ] Interface `OperatorPort` et implémentation interne
